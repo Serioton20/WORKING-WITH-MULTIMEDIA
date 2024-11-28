@@ -53,12 +53,15 @@ export default function App() {
     }
   };
 
+
   const playSound = async () => {
-    const { sound } = await Audio.Sound.createAsync(
-      require('./assets/audio/Moow-Wake up.mp3'));
+    const { sound } = await Audio.Sound.createAsync({
+      uri: 'https://drive.google.com/file/d/1kOfUvz_PN5RQHO8tdcWBU2-1NWpmzRZs/view?usp=drive_link',
+    });
     setSound(sound);
     await sound.playAsync();
   };
+
   useEffect(() => {
     return sound
       ? () => {
