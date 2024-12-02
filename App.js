@@ -6,24 +6,24 @@ import { Audio } from 'expo-av';
 export default function App() {
   const [hasGalleryPermission, setHasGalleryPermission] = useState(null);
   const [image, setImage] = useState(null);
-  const [sound, setSound] = useState();
+  const [sound, setSound] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
     (async () => {
-      const galleryStatus =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const galleryStatus = await ImagePicker.requestMediaLibraryPermissionsAsync();
       setHasGalleryPermission(galleryStatus.status === 'granted');
     })();
   }, []);
 
   const takePhoto = async () => {
-    let permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-    if (permissionResult.granted === false) {
+    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permissionResult.granted) {
       alert('Permission to access camera is required!');
       return;
     }
 
-    let result = await ImagePicker.launchCameraAsync({
+    const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
@@ -36,12 +36,12 @@ export default function App() {
   };
 
   const pickImage = async () => {
-    if (hasGalleryPermission === false) {
+    if (!hasGalleryPermission) {
       alert('No access to gallery');
       return;
     }
 
-    let result = await ImagePicker.launchImageLibraryAsync({
+    const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
@@ -53,13 +53,30 @@ export default function App() {
     }
   };
 
+  const playPauseSound = async () => {
+    const soundAsset = require('./assets/C418SubwooferLullaby.mp3');
+    
+    if (!sound) {
+      const { sound: newSound } = await Audio.Sound.createAsync(soundAsset);
+      setSound(newSound);
+      setIsPlaying(true);
+      await newSound.playAsync();
+    } else {
+      if (isPlaying) {
+        await sound.pauseAsync();
+        setIsPlaying(false);
+      } else {
+        await sound.playAsync();
+        setIsPlaying(true);
+      }
+    }
+  };
 
-  const playSound = async () => {
-    const { sound } = await Audio.Sound.createAsync({
-      uri: 'https://drive.google.com/file/d/1kOfUvz_PN5RQHO8tdcWBU2-1NWpmzRZs/view?usp=drive_link',
-    });
-    setSound(sound);
-    await sound.playAsync();
+  const stopSound = async () => {
+    if (sound) {
+      await sound.stopAsync();
+      setIsPlaying(false);
+    }
   };
 
   useEffect(() => {
@@ -72,7 +89,7 @@ export default function App() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>React Native Expo application</Text>
+      <Text style={styles.title}>React Native Expo Application</Text>
       {image && <Image source={{ uri: image }} style={styles.image} />}
 
       <View style={styles.buttonContainer}>
@@ -83,7 +100,10 @@ export default function App() {
           <Button title="Pick an Image from Library" onPress={pickImage} />
         </View>
         <View style={styles.buttonWrapper}>
-          <Button title="Play Sound" onPress={playSound} />
+          <Button title={isPlaying ? 'Pause Sound' : 'Play Sound'} onPress={playPauseSound} />
+        </View>
+        <View style={styles.buttonWrapper}>
+          <Button title="Stop Sound" onPress={stopSound} />
         </View>
       </View>
     </View>
